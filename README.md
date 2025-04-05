@@ -11,7 +11,7 @@ Below is an example of Gemini 2.0 Flash model identifying cars.
 Image taken in Japan by myself
 
 This example is Gemini 2.5 Pro (experimental) model completing a find the difference puzzle.
-![Screenshot of the Bounding Box Viewer](docs/id_objects.png)
+![Screenshot of the Bounding Box Viewer](docs/find_diff.png)
 Original image from [wikimedia](https://commons.wikimedia.org/wiki/File:Spot_the_difference.png) attributed to [Muband](https://en.wikipedia.org/wiki/ja:User:Muband)
 
 
