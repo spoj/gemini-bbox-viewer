@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bounding Box Viewer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+            background-color: #f8f9fa; /* Light background */
+            color: #333;
+        }
+        h1 {
+            color: #007bff; /* Primary color for heading */
+            margin-bottom: 30px;
+        }
+        #controls {
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Increased gap */
+            width: 100%;
+            max-width: 600px;
+            background-color: #ffffff; /* White background for controls */
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        label {
+            font-weight: 600;
+            margin-bottom: -5px; /* Adjust spacing */
+            color: #555;
+        }
+        input[type="file"],
+        input[type="text"],
+        input[type="password"] {
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input[type="file"] {
+            padding: 8px 12px; /* Slightly different padding for file input */
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #007bff; /* Primary button color */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        button:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+        }
+        button:disabled {
+            background-color: #6c757d; /* Disabled state */
+            cursor: not-allowed;
+        }
+        #image-container {
+            position: relative;
+            margin-top: 20px;
+            max-width: 100%; /* Ensure container doesn't overflow */
+            border: 1px solid #dee2e6; /* Lighter border */
+            border-radius: 4px; /* Rounded corners */
+            overflow: hidden; /* Ensure image stays within rounded corners */
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+        }
+        #uploaded-image {
+            display: block; /* Remove extra space below image */
+            max-width: 100%; /* Ensure image scales down */
+            height: auto; /* Maintain aspect ratio */
+        }
+        .bbox {
+            position: absolute;
+            border: 2px solid red;
+            box-sizing: border-box; /* Include border in width/height */
+            pointer-events: none; /* Allow interaction with image */
+        }
+        .bbox-label {
+            position: absolute;
+            background-color: red;
+            color: white;
+            font-size: 12px;
+            padding: 2px 4px;
+            white-space: nowrap;
+        }
+        #status-message {
+            font-style: italic;
+            color: #6c757d; /* Gray color for status */
+        }
+        #api-output-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-top: 30px;
+        }
+        #api-output-container h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #555;
+        }
+        #api-output {
+            background-color: #e9ecef; /* Lighter gray for code block */
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 0.9em;
+            color: #212529;
+            min-height: 50px; /* Retain min-height */
+            white-space: pre-wrap; /* Retain wrapping */
+            word-wrap: break-word; /* Retain wrapping */
+        }
+        #main-content {
+            display: flex;
+            gap: 30px; /* Space between panels */
+            width: 100%;
+            max-width: 1400px; /* Max width for the whole layout */
+            align-items: flex-start; /* Align items at the top */
+        }
+        #left-panel {
+            flex: 1; /* Takes up 1 part of the space */
+            display: flex;
+            flex-direction: column;
+            gap: 30px; /* Space between controls and API output */
+        }
+        #right-panel {
+            flex: 2; /* Takes up 2 parts of the space */
+            display: flex;
+            justify-content: center; /* Center image container if panel is wider */
+        }
+        /* Adjust max-width for controls and API output to fit left panel */
+        #controls, #api-output-container {
+            max-width: 100%; /* Allow them to fill the left panel */
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #image-container {
+             margin-top: 0; /* Remove top margin as it's handled by panel gap */
+             width: 100%; /* Allow image container to fill right panel */
+        }
+    </style>
+</head>
+<body>
+    <h1>Bounding Box Viewer</h1>
+
+    <div id="main-content">
+        <div id="left-panel">
+            <div id="controls">
+        <label for="image-upload">Upload Image:</label>
+        <input type="file" id="image-upload" accept="image/*">
+
+        <label for="prompt-input">Enter Prompt:</label>
+        <input type="text" id="prompt-input" placeholder="e.g., identify all cars">
+
+        <label for="api-key">Gemini API Key:</label> <!-- Added API Key input -->
+        <input type="password" id="api-key" placeholder="Enter your Gemini API Key">
+
+        <button id="generate-button">Generate Boxes</button>
+        <div id="status-message" style="margin-top: 10px; color: gray;"></div> <!-- Added status message area -->
+            </div> <!-- closing controls -->
+
+            <div id="api-output-container"> <!-- Styles moved to CSS -->
+                <h3>API Response JSON:</h3>
+                <pre id="api-output"></pre>
+            </div>
+        </div> <!-- closing left-panel -->
+
+        <div id="right-panel">
+             <div id="image-container">
+                <img id="uploaded-image" src="#" alt="Upload an image to view bounding boxes" />
+                <!-- Bounding boxes will be added here dynamically -->
+            </div>
+        </div> <!-- closing right-panel -->
+    </div> <!-- closing main-content -->
+
+    <script>
+        // --- DOM Elements ---
+        const imageUpload = document.getElementById('image-upload');
+        const uploadedImage = document.getElementById('uploaded-image');
+        const promptInput = document.getElementById('prompt-input');
+        const apiKeyInput = document.getElementById('api-key');
+        const generateButton = document.getElementById('generate-button');
+        const imageContainer = document.getElementById('image-container');
+        const statusMessage = document.getElementById('status-message');
+        const apiOutput = document.getElementById('api-output');
+
+        // --- State Variables ---
+
+        let currentObjectUrl = null; // Store the object URL
+        let currentFile = null; // Store the current file object
+
+        // --- Event Listeners ---
+        imageUpload.addEventListener('change', handleImageUpload);
+        generateButton.addEventListener('click', handleGenerateClick);
+        window.addEventListener('resize', handleResize); // Keep resize listener
+
+        // --- Global Variables ---
+        let resizeTimeout; // Single declaration
+
+        // --- Functions ---
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            currentFile = file; // Store the file object
+
+            // Revoke the previous object URL to free memory
+            if (currentObjectUrl) {
+                URL.revokeObjectURL(currentObjectUrl);
+            }
+
+            currentObjectUrl = URL.createObjectURL(file); // Create efficient object URL
+            uploadedImage.src = currentObjectUrl;
+
+            // Reset UI elements
+            statusMessage.textContent = '';
+            apiOutput.textContent = '';
+            clearBoundingBoxes();
+        }
+
+        // Helper function to convert file to base64
+        function getBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]); // Get only the base64 part
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function handleGenerateClick() {
+            // Validate inputs
+            if (!currentFile) {
+                alert('Please upload an image first.');
+                return;
+            }
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                alert('Please enter a prompt.');
+                return;
+            }
+            const apiKey = apiKeyInput.value.trim();
+            if (!apiKey) {
+                alert('Please enter your Gemini API Key.');
+                return;
+            }
+
+            // Update UI state
+            clearBoundingBoxes();
+            apiOutput.textContent = ''; // Clear previous API output
+            statusMessage.textContent = 'Generating bounding boxes...';
+            generateButton.disabled = true;
+
+            try {
+                const apiResponseText = await callGeminiApi(prompt, apiKey, currentFile);
+                apiOutput.textContent = apiResponseText; // Display raw response
+                processApiResponse(apiResponseText);
+                statusMessage.textContent = 'Bounding boxes generated successfully.';
+            } catch (error) {
+                console.error('Error during generation:', error);
+                // Display error in API output if it's not already showing the problematic response
+                if (!apiOutput.textContent) {
+                    apiOutput.textContent = `Error: ${error.message}`;
+                } else if (!apiOutput.textContent.includes("--- PARSING ERROR ---") && !apiOutput.textContent.includes("Error:")) {
+                     // Append general errors if not already showing a specific API or parsing error
+                     apiOutput.textContent += `\n\n--- ERROR ---\n${error.message}`;
+                }
+                statusMessage.textContent = `Error: ${error.message}`;
+                alert(`Error generating bounding boxes: ${error.message}`);
+            } finally {
+                generateButton.disabled = false; // Re-enable button
+            }
+        }
+
+        // Calls the Gemini API
+        async function callGeminiApi(prompt, apiKey, file) {
+            const imageBase64 = await getBase64(file);
+            // Using gemini-pro-vision as it's commonly available
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const requestBody = {
+                contents: [{
+                    parts: [
+                        // Refined prompt for better JSON compliance
+                        { text: `${prompt} Provide the output ONLY as a valid JSON array string. Ensure all keys (like "box_2d", "label") and all string values are enclosed in double quotes. Example format: '[{"box_2d": [ymin, xmin, ymax, xmax], "label": "object_label"}]'. Coordinates should be normalized between 0 and 1000.` },
+                        { inline_data: { mime_type: file.type, data: imageBase64 } }
+                    ]
+                }]
+                // Consider adding generationConfig for finer control if needed
+                // generationConfig: { "maxOutputTokens": 2048, "temperature": 0.4, "topP": 1, "topK": 32 }
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                let errorDetails = '';
+                try {
+                    // Attempt to get more specific error message from API response body
+                    const errorData = await response.json();
+                    errorDetails = errorData?.error?.message || JSON.stringify(errorData); // Include full error if message not found
+                    console.error("API Error Response:", errorData);
+                } catch (e) {
+                    // Fallback if parsing error response fails
+                    errorDetails = await response.text();
+                    console.error("Could not parse API error response body:", e, "Raw error body:", errorDetails);
+                }
+                throw new Error(`API Error: ${response.status} ${response.statusText}. Details: ${errorDetails}`);
+            }
+
+            const data = await response.json();
+
+            // Extract the text content, checking structure carefully
+            if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+                return data.candidates[0].content.parts[0].text;
+            } else {
+                console.error("Unexpected API response structure:", data);
+                throw new Error("Unexpected API response structure. Could not find text part in candidates[0].content.parts[0].text");
+            }
+        }
+
+        // Processes the raw API response text
+        function processApiResponse(rawApiText) {
+            if (!rawApiText) {
+                 throw new Error("API returned empty or null bounding box data.");
+            }
+
+            // Attempt to clean the raw text for parsing (remove potential markdown/quoting)
+            const cleanedJsonString = rawApiText.trim().replace(/^```json\s*|```$|^"|"$/g, '');
+
+            if (!cleanedJsonString) {
+                 throw new Error("API returned empty bounding box data after cleaning.");
+            }
+
+            try {
+                const bboxes = JSON.parse(cleanedJsonString);
+                // Extra validation: ensure it's an array
+                if (!Array.isArray(bboxes)) {
+                     throw new Error(`Parsed JSON is not an array, but type: ${typeof bboxes}`);
+                }
+                drawBoundingBoxes(bboxes); // Pass validated & parsed array
+            } catch (parseError) {
+                // Append parsing error details to the raw output already displayed
+                apiOutput.textContent += `\n\n--- PARSING ERROR on cleaned string ---\n${parseError.message}`;
+                console.error("Failed to parse cleaned JSON string:", cleanedJsonString, parseError);
+                // Make the thrown error more specific
+                throw new Error(`Failed to parse bounding box JSON from API response: ${parseError.message}`);
+            }
+        }
+
+        function clearBoundingBoxes() {
+            // Remove existing bounding boxes and labels
+            const existingBoxes = imageContainer.querySelectorAll('.bbox, .bbox-label');
+            existingBoxes.forEach(box => box.remove());
+        }
+
+        function drawBoundingBoxes(bboxes) { // Accept bboxes array as argument
+            clearBoundingBoxes(); // Clear previous boxes first
+
+            // Input validation is now done before calling this function
+            if (!Array.isArray(bboxes)) {
+                 console.error("Invalid input to drawBoundingBoxes: expected an array.", bboxes);
+                 statusMessage.textContent = 'Error: Invalid bounding box data received.';
+                 return;
+            }
+
+            const BBOX_COLORS = ['#E6194B', '#3CB44B', '#4363D8', '#F58231', '#911EB4', '#46F0F0', '#F032E6', '#BCF60C', '#FABEBE', '#008080', '#E6BEFF', '#9A6324']; // More distinct hex colors
+
+            const imgWidth = uploadedImage.clientWidth; // Use clientWidth for displayed size
+            const imgHeight = uploadedImage.clientHeight; // Use clientHeight for displayed size
+
+            // Check if image dimensions are available
+            if (imgWidth === 0 || imgHeight === 0) {
+                 // Handle case where image dimensions aren't ready yet (e.g., image not fully rendered).
+                 console.warn("Image dimensions (clientWidth/clientHeight) were 0 when drawing boxes. Bounding boxes might be misplaced.");
+                 // Proceeding with 0 dimensions, which will likely result in boxes clustered at the top-left.
+                 // A more complex solution could involve waiting for uploadedImage.onload, but adds complexity.
+            }
+
+
+            bboxes.forEach((item, index) => { // Add index for color rotation
+                if (item.box_2d && Array.isArray(item.box_2d) && item.box_2d.length === 4) {
+                    const [ymin, xmin, ymax, xmax] = item.box_2d;
+                    const label = item.label || '';
+                    const color = BBOX_COLORS[index % BBOX_COLORS.length]; // Rotate through colors
+
+                    // Scale coordinates (0-1000) to image dimensions
+                    const scaleX = imgWidth / 1000;
+                    const scaleY = imgHeight / 1000;
+
+                    const left = xmin * scaleX;
+                    const top = ymin * scaleY;
+                    const width = (xmax - xmin) * scaleX;
+                    const height = (ymax - ymin) * scaleY;
+
+                    // Create bounding box element
+                    // Create and append elements using helper functions
+                    const bboxDiv = createBboxElement(left, top, width, height, color);
+                    imageContainer.appendChild(bboxDiv); // Append the box div
+
+                    if (label) {
+                        const labelSpan = createLabelElement(left, top, width, label, color);
+                        imageContainer.appendChild(labelSpan); // Append the label span
+                    }
+                } else {
+                    console.warn("Skipping invalid bbox item:", item);
+                }
+            });
+        }
+
+        // Creates a bounding box div element
+        function createBboxElement(left, top, width, height, color) {
+            const bboxDiv = document.createElement('div');
+            bboxDiv.className = 'bbox';
+            bboxDiv.style.borderColor = color;
+            bboxDiv.style.left = `${left}px`;
+            bboxDiv.style.top = `${top}px`;
+            bboxDiv.style.width = `${width}px`;
+            bboxDiv.style.height = `${height}px`;
+            return bboxDiv;
+        }
+
+        // Creates a label span element
+        function createLabelElement(left, top, boxWidth, label, color) {
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'bbox-label';
+            labelSpan.style.backgroundColor = color;
+            labelSpan.textContent = label;
+            // Position label slightly above the top-left corner
+            labelSpan.style.left = `${left}px`;
+            labelSpan.style.top = `${top - 18}px`; // Adjust vertical offset as needed
+            // Prevent label overflow
+            labelSpan.style.maxWidth = `${boxWidth}px`;
+            labelSpan.style.overflow = 'hidden';
+            labelSpan.style.textOverflow = 'ellipsis';
+            return labelSpan;
+        }
+
+        // Debounced resize handler
+        function handleResize() {
+             if (uploadedImage.src && !uploadedImage.src.endsWith('#')) {
+                clearTimeout(resizeTimeout);
+                // Avoid automatic redraw on resize as boxes are from API.
+                // User can click "Generate" again if layout changes significantly.
+                resizeTimeout = setTimeout(() => {
+                     console.log("Window resized. Bounding boxes might need regeneration if image size changed significantly.");
+                     // Optional: Could attempt redraw if we store the last successful bboxes array.
+                     // Example: if (lastSuccessfulBboxes) drawBoundingBoxes(lastSuccessfulBboxes);
+                }, 250); // Debounce resize event
+             }
+        }
+
+    </script>
+</body>
+</html>
