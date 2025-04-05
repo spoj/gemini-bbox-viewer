@@ -1,6 +1,6 @@
 # Gemini Bounding Box Viewer
 
-A simple web-based tool to demonstrate the vision capabilities of Google's Gemini API.
+Single HTML tool to demonstrate the vision capabilities of Google's Gemini API by. This tool only connects to Google Gemini API directly and does not store / track anything.
 
 Upload an image, provide a prompt (e.g., "identify all cars"), enter your Gemini API key, and click "Generate Boxes". The tool will call the Gemini API and display the resulting bounding boxes overlaid on your image.
 
