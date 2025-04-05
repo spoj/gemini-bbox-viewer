@@ -178,7 +178,7 @@
         #clear-image-button {
             position: absolute;
             top: 10px;
-            right: 10px;
+            right: 50px; /* Adjusted to make space for the new button */
             background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
             color: #dc3545; /* Red color for delete/clear */
             border: 1px solid #dc3545;
@@ -197,6 +197,43 @@
         #clear-image-button:hover {
             background-color: #dc3545; /* Red background on hover */
             color: white;
+        }
+        #toggle-image-style-button {
+            position: absolute;
+            top: 10px;
+            right: 10px; /* Positioned next to the clear button */
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #007bff; /* Blue color */
+            border: 1px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            font-size: 16px;
+            font-weight: bold;
+            line-height: 28px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            z-index: 10;
+            transition: background-color 0.2s ease, color 0.2s ease; /* Smooth transition */
+        }
+        #toggle-image-style-button:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        #toggle-image-style-button.active { /* Style when active */
+             background-color: #0056b3; /* Darker blue */
+             color: white;
+             border-color: #0056b3;
+        }
+        /* Class to apply lightness/saturation filter */
+        #uploaded-image.image-lightened {
+            filter: brightness(0.5) saturate(0.3);
+            transition: filter 0.3s ease-in-out; /* Smooth transition for the filter */
+        }
+        #uploaded-image { /* Add transition for when filter is removed */
+             transition: filter 0.3s ease-in-out;
         }
     </style>
 </head>
@@ -243,7 +280,8 @@
             </div>
             <!-- Image Display Area (initially hidden via CSS) -->
             <div id="image-container" style="display: none;"> <!-- JS will toggle this -->
-                <button id="clear-image-button" title="Clear Image">&times;</button> <!-- Added Clear Button -->
+                <button id="clear-image-button" title="Clear Image">&times;</button>
+                <button id="toggle-image-style-button" title="Toggle Image Style">💡</button> <!-- Added Toggle Button -->
                 <img id="uploaded-image" src="#" alt="Uploaded image" />
                 <!-- Bounding boxes will be added here dynamically -->
             </div>
@@ -262,12 +300,14 @@
         const statusMessage = document.getElementById('status-message');
         const apiOutput = document.getElementById('api-output');
         const clearImageButton = document.getElementById('clear-image-button');
-        const modelSelect = document.getElementById('model-select'); // Added model select reference
+        const modelSelect = document.getElementById('model-select');
+        const toggleImageStyleButton = document.getElementById('toggle-image-style-button'); // Added toggle button reference
 
         // --- State Variables ---
 
         let currentObjectUrl = null; // Store the object URL
         let currentFile = null; // Store the current file object
+        let isImageLightened = false; // Track toggle state
 
         // --- Event Listeners ---
         // imageUpload.addEventListener('change', handleImageUpload); // Removed
@@ -305,7 +345,8 @@
             handleFileSelect(file);
         });
  
-        clearImageButton.addEventListener('click', resetToDropZone); // Added listener for clear button
+        clearImageButton.addEventListener('click', resetToDropZone);
+        toggleImageStyleButton.addEventListener('click', handleToggleImageStyle); // Added listener for toggle button
 
         // --- Global Variables ---
         let resizeTimeout; // Single declaration
@@ -365,6 +406,10 @@
             clearBoundingBoxes();
             statusMessage.textContent = '';
             apiOutput.textContent = '';
+            // Reset image style when clearing
+            uploadedImage.classList.remove('image-lightened');
+            toggleImageStyleButton.classList.remove('active');
+            isImageLightened = false;
         }
 
         // Helper function to convert file to base64
@@ -607,6 +652,12 @@
              }
         }
 
+        // Function to handle the image style toggle
+        function handleToggleImageStyle() {
+            isImageLightened = !isImageLightened; // Toggle the state
+            uploadedImage.classList.toggle('image-lightened', isImageLightened);
+            toggleImageStyleButton.classList.toggle('active', isImageLightened);
+        }
     </script>
 </body>
 </html>

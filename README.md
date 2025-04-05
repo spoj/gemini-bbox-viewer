@@ -6,7 +6,14 @@ Upload an image, provide a prompt (e.g., "identify all cars"), enter your Gemini
 
 ## Example
 
-![Screenshot of the Bounding Box Viewer](gemini-bbox-viewer.png)
+Below is an example of Gemini 2.0 Flash model identifying cars.
+![Screenshot of the Bounding Box Viewer](docs/id_objects.png)
+Image taken in Japan by myself
+
+This example is Gemini 2.5 Pro (experimental) model completing a find the difference puzzle.
+![Screenshot of the Bounding Box Viewer](docs/id_objects.png)
+Original image from [wikimedia](https://commons.wikimedia.org/wiki/File:Spot_the_difference.png) attributed to [Muband](https://en.wikipedia.org/wiki/ja:User:Muband)
+
 
 ## How to Use
 1.  Open `index.html` in your web browser.
