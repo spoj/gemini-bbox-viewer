@@ -37,13 +37,15 @@
         }
         input[type="file"],
         input[type="text"],
-        input[type="password"] {
+        input[type="password"],
+        select { /* Add select styling */
             padding: 10px 12px;
             border: 1px solid #ced4da;
             border-radius: 4px;
             font-size: 1rem;
             width: 100%;
             box-sizing: border-box;
+            background-color: white; /* Ensure select background is white */
         }
         input[type="file"] {
             padding: 8px 12px; /* Slightly different padding for file input */
@@ -68,17 +70,17 @@
         }
         #image-container {
             position: relative;
-            margin-top: 20px;
-            max-width: 100%; /* Ensure container doesn't overflow */
-            border: 1px solid #dee2e6; /* Lighter border */
-            border-radius: 4px; /* Rounded corners */
-            overflow: hidden; /* Ensure image stays within rounded corners */
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+            position: relative; /* Keep for bbox positioning */
+            width: 100%; /* Allow image container to fill right panel */
+            /* border, radius, overflow, shadow removed - applied to dropzone or image directly */
         }
         #uploaded-image {
-            display: block; /* Remove extra space below image */
-            max-width: 100%; /* Ensure image scales down */
-            height: auto; /* Maintain aspect ratio */
+            display: block; /* Let the container control visibility */
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
         }
         .bbox {
             position: absolute;
@@ -98,17 +100,14 @@
             font-style: italic;
             color: #6c757d; /* Gray color for status */
         }
-        #api-output-container {
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            margin-top: 30px;
-        }
-        #api-output-container h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: #555;
+        /* #api-output-container styles removed as it's merged into #controls */
+        /* Style for the API output heading *within* the controls card */
+        #controls h3 {
+             margin-top: 20px; /* Add some space above the heading */
+             margin-bottom: 10px;
+             color: #555;
+             border-top: 1px solid #eee; /* Add a separator line */
+             padding-top: 20px; /* Space above the separator */
         }
         #api-output {
             background-color: #e9ecef; /* Lighter gray for code block */
@@ -133,7 +132,7 @@
             flex: 1; /* Takes up 1 part of the space */
             display: flex;
             flex-direction: column;
-            gap: 30px; /* Space between controls and API output */
+            /* gap removed as API output is now inside controls */
         }
         #right-panel {
             flex: 2; /* Takes up 2 parts of the space */
@@ -141,14 +140,63 @@
             justify-content: center; /* Center image container if panel is wider */
         }
         /* Adjust max-width for controls and API output to fit left panel */
-        #controls, #api-output-container {
+        #controls { /* #api-output-container removed */
             max-width: 100%; /* Allow them to fill the left panel */
             width: 100%;
             box-sizing: border-box;
         }
+        /* Style for the drop zone */
+        #drop-zone {
+            display: flex; /* Use flexbox for centering */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            min-height: 300px; /* Give it some initial size */
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            color: #6c757d;
+            font-size: 1.2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #drop-zone.dragover {
+            background-color: #e2e6ea; /* Highlight when dragging over */
+        }
+        #drop-zone p {
+            margin: 5px 0;
+        }
         #image-container {
-             margin-top: 0; /* Remove top margin as it's handled by panel gap */
-             width: 100%; /* Allow image container to fill right panel */
+             margin-top: 0;
+             width: 100%;
+             position: relative; /* Ensure button positioning is relative to this */
+        }
+        #clear-image-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+            color: #dc3545; /* Red color for delete/clear */
+            border: 1px solid #dc3545;
+            border-radius: 50%; /* Circular */
+            width: 30px;
+            height: 30px;
+            padding: 0; /* Remove default padding */
+            font-size: 16px; /* Adjust icon size */
+            font-weight: bold;
+            line-height: 28px; /* Center the 'X' vertically */
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            z-index: 10; /* Ensure it's above the image */
+        }
+        #clear-image-button:hover {
+            background-color: #dc3545; /* Red background on hover */
+            color: white;
         }
     </style>
 </head>
@@ -158,28 +206,45 @@
     <div id="main-content">
         <div id="left-panel">
             <div id="controls">
-        <label for="image-upload">Upload Image:</label>
-        <input type="file" id="image-upload" accept="image/*">
+        <!-- File input removed from here -->
 
         <label for="prompt-input">Enter Prompt:</label>
         <input type="text" id="prompt-input" placeholder="e.g., identify all cars">
 
         <label for="api-key">Gemini API Key:</label> <!-- Added API Key input -->
         <input type="password" id="api-key" placeholder="Enter your Gemini API Key">
+ 
+        <label for="model-select">Select Model:</label>
+        <select id="model-select">
+            <option value="gemini-2.0-flash" selected>gemini-2.0-flash (Default)</option>
+            <option value="gemini-2.5-pro-exp-03-25">gemini-2.5-pro-exp-03-25</option>
+        </select>
 
         <button id="generate-button">Generate Boxes</button>
         <div id="status-message" style="margin-top: 10px; color: gray;"></div> <!-- Added status message area -->
-            </div> <!-- closing controls -->
-
-            <div id="api-output-container"> <!-- Styles moved to CSS -->
+ 
+                <!-- API Response Section Moved Inside Controls Card -->
                 <h3>API Response JSON:</h3>
                 <pre id="api-output"></pre>
-            </div>
+            </div> <!-- closing controls -->
+ 
+            <!-- Removed separate api-output-container div -->
         </div> <!-- closing left-panel -->
 
         <div id="right-panel">
-             <div id="image-container">
-                <img id="uploaded-image" src="#" alt="Upload an image to view bounding boxes" />
+            <!-- Drop Zone Area -->
+            <div id="drop-zone">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-cloud-arrow-up-fill" viewBox="0 0 16 16">
+                    <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2m2.354 5.146a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0z"/>
+                </svg>
+                <p><strong>Drag & Drop Image Here</strong></p>
+                <p>or</p>
+                <p>Click to Upload</p>
+            </div>
+            <!-- Image Display Area (initially hidden via CSS) -->
+            <div id="image-container" style="display: none;"> <!-- JS will toggle this -->
+                <button id="clear-image-button" title="Clear Image">&times;</button> <!-- Added Clear Button -->
+                <img id="uploaded-image" src="#" alt="Uploaded image" />
                 <!-- Bounding boxes will be added here dynamically -->
             </div>
         </div> <!-- closing right-panel -->
@@ -187,14 +252,17 @@
 
     <script>
         // --- DOM Elements ---
-        const imageUpload = document.getElementById('image-upload');
+        // const imageUpload = document.getElementById('image-upload'); // Removed
+        const dropZone = document.getElementById('drop-zone');
         const uploadedImage = document.getElementById('uploaded-image');
         const promptInput = document.getElementById('prompt-input');
         const apiKeyInput = document.getElementById('api-key');
         const generateButton = document.getElementById('generate-button');
-        const imageContainer = document.getElementById('image-container');
+        const imageContainer = document.getElementById('image-container'); // The div containing the img
         const statusMessage = document.getElementById('status-message');
         const apiOutput = document.getElementById('api-output');
+        const clearImageButton = document.getElementById('clear-image-button');
+        const modelSelect = document.getElementById('model-select'); // Added model select reference
 
         // --- State Variables ---
 
@@ -202,18 +270,54 @@
         let currentFile = null; // Store the current file object
 
         // --- Event Listeners ---
-        imageUpload.addEventListener('change', handleImageUpload);
+        // imageUpload.addEventListener('change', handleImageUpload); // Removed
         generateButton.addEventListener('click', handleGenerateClick);
-        window.addEventListener('resize', handleResize); // Keep resize listener
+        window.addEventListener('resize', handleResize);
+
+        // Drop Zone Event Listeners
+        dropZone.addEventListener('click', () => {
+            // Create a hidden file input and click it
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            fileInput.addEventListener('change', (event) => {
+                handleFileSelect(event.target.files[0]);
+            });
+            document.body.appendChild(fileInput); // Required for some browsers
+            fileInput.click();
+            document.body.removeChild(fileInput); // Clean up
+        });
+
+        dropZone.addEventListener('dragover', (event) => {
+            event.preventDefault(); // Prevent default browser behavior
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (event) => {
+            event.preventDefault(); // Prevent default browser behavior
+            dropZone.classList.remove('dragover');
+            const file = event.dataTransfer.files[0];
+            handleFileSelect(file);
+        });
+ 
+        clearImageButton.addEventListener('click', resetToDropZone); // Added listener for clear button
 
         // --- Global Variables ---
         let resizeTimeout; // Single declaration
 
         // --- Functions ---
 
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // Renamed from handleImageUpload, now takes a file object directly
+        function handleFileSelect(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                alert('Please select an image file.');
+                return;
+            }
 
             currentFile = file; // Store the file object
 
@@ -225,10 +329,42 @@
             currentObjectUrl = URL.createObjectURL(file); // Create efficient object URL
             uploadedImage.src = currentObjectUrl;
 
+            // Show image container, hide drop zone
+            imageContainer.style.display = 'block';
+            dropZone.style.display = 'none';
+
+
             // Reset UI elements
             statusMessage.textContent = '';
             apiOutput.textContent = '';
             clearBoundingBoxes();
+
+            // Ensure image dimensions are ready before potential drawing
+            uploadedImage.onload = () => {
+                 console.log("Image loaded, dimensions:", uploadedImage.clientWidth, uploadedImage.clientHeight);
+                 // If there were pending boxes to draw, could draw them here.
+            };
+            uploadedImage.onerror = () => {
+                console.error("Error loading image preview.");
+                alert("Could not load image preview.");
+                resetToDropZone(); // Go back to drop zone state on error
+            };
+        }
+
+        // Function to reset the UI back to the drop zone state
+        function resetToDropZone() {
+             if (currentObjectUrl) {
+                URL.revokeObjectURL(currentObjectUrl);
+                currentObjectUrl = null;
+            }
+            currentFile = null;
+            uploadedImage.onerror = null; // Remove the error handler first
+            uploadedImage.src = '#'; // Clear image source
+            imageContainer.style.display = 'none'; // Hide image container
+            dropZone.style.display = 'flex'; // Show drop zone
+            clearBoundingBoxes();
+            statusMessage.textContent = '';
+            apiOutput.textContent = '';
         }
 
         // Helper function to convert file to base64
@@ -257,6 +393,11 @@
                 alert('Please enter your Gemini API Key.');
                 return;
             }
+            const selectedModel = modelSelect.value; // Get selected model
+            if (!selectedModel) {
+                 alert('Please select a model.'); // Should not happen with default
+                 return;
+            }
 
             // Update UI state
             clearBoundingBoxes();
@@ -265,7 +406,7 @@
             generateButton.disabled = true;
 
             try {
-                const apiResponseText = await callGeminiApi(prompt, apiKey, currentFile);
+                const apiResponseText = await callGeminiApi(prompt, apiKey, currentFile, selectedModel); // Pass model
                 apiOutput.textContent = apiResponseText; // Display raw response
                 processApiResponse(apiResponseText);
                 statusMessage.textContent = 'Bounding boxes generated successfully.';
@@ -285,11 +426,11 @@
             }
         }
 
-        // Calls the Gemini API
-        async function callGeminiApi(prompt, apiKey, file) {
+        // Calls the Gemini API - now accepts selectedModel
+        async function callGeminiApi(prompt, apiKey, file, selectedModel) {
             const imageBase64 = await getBase64(file);
-            // Using gemini-pro-vision as it's commonly available
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // Use the selected model in the API URL
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
 
             const requestBody = {
                 contents: [{
@@ -454,7 +595,7 @@
 
         // Debounced resize handler
         function handleResize() {
-             if (uploadedImage.src && !uploadedImage.src.endsWith('#')) {
+             if (currentFile && uploadedImage.src && !uploadedImage.src.endsWith('#')) { // Check currentFile as well
                 clearTimeout(resizeTimeout);
                 // Avoid automatic redraw on resize as boxes are from API.
                 // User can click "Generate" again if layout changes significantly.
